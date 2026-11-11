@@ -1,0 +1,158 @@
+workflows:
+  live-studio-android-debug:
+    name: Sucstudiolive - Android test APK
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      node: v22.11.0
+      java: 17
+    scripts:
+      - name: Check project files
+        script: |
+          set -euo pipefail
+          test -f package.json
+          test -f capacitor.config.ts
+          test -f Studio_Livestream.html
+      - name: Install dependencies
+        script: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+      - name: Prepare web assets
+        script: |
+          set -euo pipefail
+          npm run web:sync
+          npm run verify
+          test -s www/index.html
+          test -s www/native-bridge.js
+      
+  
+      - name: Generate Android project and sync plugins
+        script: |
+          set -euo pipefail
+
+          npx cap add android
+          npx cap sync android
+
+          # Add an HTTPS Google Maven mirror while retaining Google's official repository.
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          mirror = 'maven { url "https://maven.aliyun.com/repository/google" }'
+          for name in ("android/settings.gradle", "android/build.gradle"):
+              p = Path(name)
+              if not p.exists():
+                  raise SystemExit(f"Cannot find generated Gradle file: {name}")
+              text = p.read_text()
+              if mirror not in text:
+                  text = re.sub(
+                      r"^(\s*)google\(\)\s*$",
+                      lambda m: f"{m.group(1)}{mirror}\n{m.group(1)}google()",
+                      text,
+                      flags=re.MULTILINE
+                  )
+                  p.write_text(text)
+
+          print("Google Maven mirror configured; official google() retained.")
+          PY
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("android/build.gradle")
+          if not p.exists():
+              raise SystemExit("Cannot find android/build.gradle")
+
+          s = p.read_text()
+
+          if "jitpack.io" not in s:
+              marker = "allprojects {"
+              start = s.find(marker)
+              if start < 0:
+                  raise SystemExit("Cannot find allprojects block in android/build.gradle")
+
+              repo = s.find("repositories {", start)
+              if repo < 0:
+                  raise SystemExit("Cannot find repositories block")
+
+              pos = repo + len("repositories {")
+              s = (
+                  s[:pos]
+                  + '\n        maven { url "https://jitpack.io" }'
+                  + s[pos:]
+              )
+              p.write_text(s)
+
+          print("JitPack configured in android/build.gradle")
+          PY
+
+          test -x android/gradlew
+
+
+      - name: Build debug APK
+        script: |
+          set -euo pipefail
+          cd android
+          ./gradlew --no-daemon --refresh-dependencies assembleDebug
+          test -s app/build/outputs/apk/debug/app-debug.apk
+    artifacts:
+      - android/app/build/outputs/apk/debug/*.apk
+      - android/app/build/outputs/mapping/**/mapping.txt
+      - /tmp/gradle/**
+
+  live-studio-ios-unsigned:
+    name: Sucstudiolive - iOS unsigned build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      xcode: latest
+      node: v22.11.0
+      cocoapods: default
+    scripts:
+      - name: Check project files
+        script: |
+          set -euo pipefail
+          test -f package.json
+          test -f capacitor.config.ts
+          test -f Studio_Livestream.html
+      - name: Install dependencies
+        script: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+      - name: Prepare web assets
+        script: |
+          set -euo pipefail
+          npm run web:sync
+          npm run verify
+          test -s www/index.html
+          test -s www/native-bridge.js
+      - name: Generate iOS project and sync plugins
+        script: |
+          set -euo pipefail
+          npx cap add ios
+          npx cap sync ios
+          test -f ios/App/App/Info.plist
+      - name: Add camera and microphone descriptions
+        script: |
+          set -euo pipefail
+          PLIST="ios/App/App/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :NSCameraUsageDescription Sucstudiolive cần camera để phát hình ảnh." "$PLIST" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string Sucstudiolive cần camera để phát hình ảnh." "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :NSMicrophoneUsageDescription Sucstudiolive cần micro để phát âm thanh." "$PLIST" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string Sucstudiolive cần micro để phát âm thanh." "$PLIST"
+      - name: Build iOS app (unsigned)
+        script: |
+          set -euo pipefail
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$CM_BUILD_DIR/build/ios" CODE_SIGNING_ALLOWED=NO build
+      - name: Package unsigned IPA
+        script: |
+          set -euo pipefail
+          APP_PATH="$CM_BUILD_DIR/build/ios/Build/Products/Release-iphoneos/App.app"
+          STAGE="$CM_BUILD_DIR/build/ios/ipa-staging"
+          test -d "$APP_PATH"
+          mkdir -p "$CM_BUILD_DIR/build/ios" "$STAGE/Payload"
+          ditto "$APP_PATH" "$STAGE/Payload/App.app"
+          cd "$STAGE"
+          zip -qry "$CM_BUILD_DIR/build/ios/Sucstudiolive-iOS-unsigned.ipa" Payload
+    artifacts:
+      - build/ios/Sucstudiolive-iOS-unsigned.ipa
+      - build/ios/Build/Products/Release-iphoneos/App.app
+      - /tmp/xcodebuild_logs/*.log
