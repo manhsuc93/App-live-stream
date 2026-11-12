@@ -13,7 +13,7 @@
     "tsconfig.json"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc --pretty false --project tsconfig.json"
   },
   "dependencies": {
     "@capacitor/core": "^7.4.3"
