@@ -17,7 +17,6 @@ Chia sẻ màn hình
 Audio Mixer
 Micro 100%
 
-Nhạc nền (BGM) 50%
 Đích phát
 Nền tảng: YouTube Live
 Độ phân giải: 1080p (Full HD)
@@ -48,11 +47,6 @@ Bảng Tỉ Số Thể Thao Hiện Bảng Điểm
 ĐỘI B (AWAY) ĐỘI XANH
 Điểm số:
 - 0 +
-Khán Giả Chat Live
-Nguyễn Văn A: Chào Studio! Stream nét quá 👌
-Trần Thị B: Âm thanh nghe rõ lắm ad ơi!
-Gửi
-Hiện Chat lên Stream Canvas
 Cấu hình Cổng Phát (RTMP)
 Nền tảng Livestream
                                 YouTube Live
@@ -63,7 +57,7 @@ Nền tảng Livestream
 RTMP Server URL rtmp://a.rtmp.youtube.com/live2
 Stream Key (Khóa luồng)
 Stream Quality Presets
-                                1080p 60fps (6000 Kbps)
-                                1080p 30fps (4500 Kbps)
-                                720p 30fps (2500 Kbps)
+                                1080p 60fps (9000 Kbps)
+                                1080p 30fps (6000 Kbps)
+                                720p 30fps (3500 Kbps)
                             
