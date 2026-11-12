@@ -122,14 +122,16 @@ workflows:
           set -euo pipefail
           npm install --no-audit --no-fund
       - name: Prepare web assets
-        script: npmrun build
-          set -euo pipefail
-          test -s native/rtmp-publisher/src/index.ts
-          test -s native/rtmp-publisher/tsconfig.json
-          npm run web:sync
-          npm run verify
-          test -s www/index.html
-          test -s www/native-bridge.js
+  script: |
+    set -euo pipefail
+    npm run build
+    test -s native/rtmp-publisher/src/index.ts
+    test -s native/rtmp-publisher/tsconfig.json
+    npm run web:sync
+    npm run verify
+    test -s www/index.html
+    test -s www/native-bridge.js
+
       - name: Generate iOS project and sync plugins
         script: |
           set -euo pipefail
