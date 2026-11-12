@@ -20,6 +20,8 @@ workflows:
       - name: Prepare web assets
         script: |
           set -euo pipefail
+          test -s native/rtmp-publisher/src/index.ts
+          test -s native/rtmp-publisher/tsconfig.json
           npm run web:sync
           npm run verify
           test -s www/index.html
@@ -122,6 +124,8 @@ workflows:
       - name: Prepare web assets
         script: |
           set -euo pipefail
+          test -s native/rtmp-publisher/src/index.ts
+          test -s native/rtmp-publisher/tsconfig.json
           npm run web:sync
           npm run verify
           test -s www/index.html
