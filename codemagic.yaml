@@ -122,7 +122,7 @@ workflows:
           set -euo pipefail
           npm install --no-audit --no-fund
       - name: Prepare web assets
-        script: |
+        script: npmrun build
           set -euo pipefail
           test -s native/rtmp-publisher/src/index.ts
           test -s native/rtmp-publisher/tsconfig.json
