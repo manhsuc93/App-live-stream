@@ -20,7 +20,6 @@ workflows:
       - name: Prepare web assets
         script: |
           set -euo pipefail
-          npm run build
           test -s native/rtmp-publisher/src/index.ts
           test -s native/rtmp-publisher/tsconfig.json
           npm run web:sync
